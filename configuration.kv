@@ -1,7 +1,10 @@
 #:kivy 1.0.9
-
+Configuration: 
 
 <Configuration>:
+    url: url
+    pwd: password
+    name: name
     canvas.before:
         Color:
             rgba: 1, 1, 1, 1
@@ -15,20 +18,26 @@
         col_default_width: 300
         padding: 20
         spacing: 10
+        pos: self.pos
+        size: self.size
         top: root.top - 50
+        pwd: password
+        name: name
         Image:
             source: './icon.png'
             height: 500
-            size_hint_x: None
             allow_stretch: True
+            keep_ratio: True       
         Label:
-
+            text: ''
+            height: 500
+            size_hint_x: None
         Label: 
             text: 'Your cozy URL'
             color: [0,0,0,0]
             markup: True
-        TextInput:
-            id: url 
+        TextInput: 
+            id: url
             focus: True
         Label: 
             text: 'Your cozy password'
@@ -46,4 +55,5 @@
         Label:
             text:''
         Button:
-            text: 'Add'
+            text: 'Add'    
+            on_press: root.install()
