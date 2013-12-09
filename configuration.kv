@@ -1,0 +1,49 @@
+#:kivy 1.0.9
+
+
+<Configuration>:
+    canvas.before:
+        Color:
+            rgba: 1, 1, 1, 1
+        Rectangle:
+            pos: self.pos
+            size: self.size
+    GridLayout:
+        rows: 5
+        row_default_height: 30
+        cols: 2
+        col_default_width: 300
+        padding: 20
+        spacing: 10
+        top: root.top - 50
+        Image:
+            source: '/home/zoe/Documents/Cozy_Cloud/couchdb-fuse/icon/icon.png'
+            height: 500
+            size_hint_x: None
+            allow_stretch: True
+        Label:
+
+        Label: 
+            text: 'Your cozy URL'
+            color: [0,0,0,0]
+            markup: True
+        TextInput:
+            id: url 
+            focus: True
+        Label: 
+            text: 'Your cozy password'
+            color: [0,0,0,0]
+            markup: True
+        TextInput:
+            id: password 
+            password: True
+        Label: 
+            text: 'Your device name'
+            color: [0,0,0,0]
+            markup: True
+        TextInput:
+            id: name 
+        Label:
+            text:''
+        Button:
+            text: 'Add'
