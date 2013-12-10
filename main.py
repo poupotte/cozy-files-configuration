@@ -27,51 +27,40 @@ class Configuration(AnchorLayout):
         pwd = self.pwd.text
         name = self.name.text
         if name is "" or pwd is "" or url is "":            
-            self.error.text = 'Tous les champs doivent etre remplis'
-            pass
-        else:
-            url = self._normalize_url(url)
-            if not url:        
-                self.error.text = "L'url de votre cozy n'est pas correcte"
-                pass
-            else:
-                try:  
-                    data = {'login': name}
-                    r = post(url + '/device/', data=data, auth=('owner', pwd)) 
-                except Exception, e:
-                    print e
-                    self.error.text = "Verifiez l'url de votre cozy"
-                    self.error.texture_update()
-                    self.error.anchors
-                    pass            
-                if r.status_code == 401:
-                    self.error.text = "L'url et le mot de passe de votre cozy \n           ne correspondent pas"
-                    self.error.texture_update()
-                    self.error.anchors
-                    pass
-                elif r.status_code == 400:
-                    self.error.text = 'Ce nom est deja utilise par un autre device'
-                    self.error.texture_update()
-                    self.error.anchors
-                    pass
-                else:
-                    self.progress.value = 10
-                    self.error.text = ""
-                    self.error.texture_update()
-                    self.error.anchors
-                    init_database()                
-                    self.progress.value = 15
-                    data = json.loads(r.content)
-                    replicate_to_local(url, name, data['password'], data['id'])  
-                    err = init_device(url, data['password'], data['id'])
-                    if err:
-                        self.error.text = err
-                        self.error.texture_update()
-                        self.error.anchors
-                        return False 
-                    else:
-                        replicate_from_local(url, name, data['password'], data['id'])
-                        Clock.schedule_interval(self.progress_bar, 1/25)
+            self._display_error('Tous les champs doivent etre remplis')
+            return
+        url = self._normalize_url(url)
+        if not url:        
+            self._display_error("L'url de votre cozy n'est pas correcte")
+            return
+        try:  
+            data = {'login': name}
+            r = post(url + '/device/', data=data, auth=('owner', pwd)) 
+            if r.status_code == 401:
+                self._display_error("""L'url et le mot de passe de votre cozy 
+                            ne correspondent pas""")
+                return
+            elif r.status_code == 400:
+                self._display_error('Ce nom est deja utilise par un autre device')
+                return
+        except Exception, e:
+            print e
+            self._display_error("Verifiez l'url de votre cozy")
+            return 
+        self.progress.value = 10
+        self.error.text = ""
+        self.error.texture_update()
+        self.error.anchors
+        init_database()                
+        self.progress.value = 15
+        data = json.loads(r.content)
+        replicate_to_local(url, name, data['password'], data['id'])  
+        err = init_device(url, data['password'], data['id'])
+        if err:
+            self._display_error(err)
+            return 
+        replicate_from_local(url, name, data['password'], data['id'])
+        Clock.schedule_interval(self.progress_bar, 1/25)
 
         
 
@@ -87,6 +76,11 @@ class Configuration(AnchorLayout):
             if part.find('cozycloud.cc') is not -1:
                 return 'https://%s' %part
         return False
+
+    def _display_error(self, error):
+        self.error.text = error
+        self.error.texture_update()
+        self.error.anchors
 
 
 class ConfigurationApp(App):
