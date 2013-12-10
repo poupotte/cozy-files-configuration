@@ -53,10 +53,10 @@ class Configuration(AnchorLayout):
             self._display_error("Verifiez l'url de votre cozy")
             return 
 
-        thread = Thread(target=Clock.schedule_interval, args=(self.progress_bar, 1/25))
-        thread.start()
-        threadbis = Thread(target=self.configure, args=(url, pwd, name, r))
-        threadbis.start()
+        thread_progress = Thread(target=Clock.schedule_interval, args=(self.progress_bar, 1/25))
+        thread_progress.start()
+        thread_configure = Thread(target=self.configure, args=(url, pwd, name, r))
+        thread_configure.start()
 
     def configure(self, url, pwd, name, r):
         self.max_prog = 0.1
@@ -74,9 +74,6 @@ class Configuration(AnchorLayout):
         pass
       
     def progress_bar(self, dt):
-        print "progress_bar"
-        print self.max_prog
-        print self.progress.value
         if self.max_prog < 0.16:
             self.progress.value = 100 * self.max_prog
         else:
