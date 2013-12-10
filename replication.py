@@ -35,9 +35,40 @@ def recover_progression():
         progress = progress + rep["progress"]
     return progress/200.
 
+
+def add_view(docType, db):
+    db["_design/%s" %docType.lower()] = {
+    "views": {
+        "all": {
+            "map": """function (doc) {
+                          if (doc.docType === \"%s\") {
+                              emit(doc.id, doc) 
+                          }
+                       }""" %docType
+                },
+        "byFolder": {
+            "map": """function (doc) {
+                          if (doc.docType === \"%s\") {
+                              emit(doc.path, doc) 
+                          }
+                      }""" %docType
+                },
+        "byFullPath": {
+            "map": """function (doc) {
+                          if (doc.docType === \"%s\") {
+                              emit(doc.path + '/' + doc.name, doc) 
+                          }
+                      }""" %docType
+                }
+            }
+        }
+
 def init_database():
     # Create database
     db = server.create(database)
+
+    add_view('Folder', db)
+    add_view('File', db)
 
     db["_design/device"] = {
         "views": {
@@ -52,58 +83,6 @@ def init_database():
                 "map": """function (doc) {
                               if (doc.docType === \"Device\") {
                                   emit(doc.url, doc) 
-                              }
-                          }"""
-                    }
-                }
-            }
-
-    db["_design/folder"] = {
-        "views": {
-            "all": {
-                "map": """function (doc) {
-                              if (doc.docType === \"Folder\") {
-                                  emit(doc.id, doc) 
-                              }
-                           }"""
-                    },
-            "byFolder": {
-                "map": """function (doc) {
-                              if (doc.docType === \"Folder\") {
-                                  emit(doc.path, doc) 
-                              }
-                          }"""
-                    },
-            "byFullPath": {
-                "map": """function (doc) {
-                              if (doc.docType === \"Folder\") {
-                                  emit(doc.path + '/' + doc.name, doc) 
-                              }
-                          }"""
-                    }
-                }
-            }
-
-    db["_design/file"] = {
-        "views": {
-            "all": {
-                "map": """function (doc) {
-                              if (doc.docType === \"File\") {
-                                  emit(doc.id, doc) 
-                              }
-                           }"""
-                    },
-            "byFolder": {
-                "map": """function (doc) {
-                              if (doc.docType === \"File\") {
-                                  emit(doc.path, doc) 
-                              }
-                          }"""
-                    },
-            "byFullPath": {
-                "map": """function (doc) {
-                              if (doc.docType === \"File\") {
-                                  emit(doc.path + '/' + doc.name, doc) 
                               }
                           }"""
                     }
