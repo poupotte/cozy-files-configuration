@@ -1,4 +1,4 @@
-from couchdb import Database, Document, ResourceNotFound, Server
+from couchdb import Database, Server
 from couchdb.client import Row, ViewResults
 
 try:

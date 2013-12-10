@@ -7,6 +7,7 @@ from replication import replicate_to_local, recover_progression, init_database, 
 from replication import recover_progression
 from couchdb import Database, Server
 from kivy.clock import Clock
+from threading import Thread
 
 try:
     import simplejson as json
@@ -22,17 +23,21 @@ class Configuration(AnchorLayout):
     name = ObjectProperty()
     error = ObjectProperty()
 
+    max_prog = 0
+    end = False
+
     def install(self):
         url = self.url.text
         pwd = self.pwd.text
         name = self.name.text
+        self.progress.value = 0
         if name is "" or pwd is "" or url is "":            
             self._display_error('Tous les champs doivent etre remplis')
             return
         url = self._normalize_url(url)
         if not url:        
             self._display_error("L'url de votre cozy n'est pas correcte")
-            return
+            return      
         try:  
             data = {'login': name}
             r = post(url + '/device/', data=data, auth=('owner', pwd)) 
@@ -47,28 +52,39 @@ class Configuration(AnchorLayout):
             print e
             self._display_error("Verifiez l'url de votre cozy")
             return 
-        self.progress.value = 10
-        self.error.text = ""
-        self.error.texture_update()
-        self.error.anchors
-        init_database()                
-        self.progress.value = 15
+
+        thread = Thread(target=Clock.schedule_interval, args=(self.progress_bar, 1/25))
+        thread.start()
+        threadbis = Thread(target=self.configure, args=(url, pwd, name, r))
+        threadbis.start()
+
+    def configure(self, url, pwd, name, r):
+        self.max_prog = 0.1
+        self._display_error("")
+        init_database() 
+        self.max_prog = 0.15
         data = json.loads(r.content)
-        replicate_to_local(url, name, data['password'], data['id'])  
+        self.max_prog = 0.98
+        replicate_to_local(url, name, data['password'], data['id']) 
         err = init_device(url, data['password'], data['id'])
         if err:
             self._display_error(err)
-            return 
+            return             
         replicate_from_local(url, name, data['password'], data['id'])
-        Clock.schedule_interval(self.progress_bar, 1/25)
-
-        
-
+        pass
+      
     def progress_bar(self, dt):
-        progress = recover_progression()
-        if progress > 0.98:
-            return False
-        self.progress.value = 15 + 75*progress
+        print "progress_bar"
+        print self.max_prog
+        print self.progress.value
+        if self.max_prog < 0.16:
+            self.progress.value = 100 * self.max_prog
+        else:
+            progress = recover_progression()
+            print progress
+            if progress > 0.98:
+                return False
+            self.progress.value = 15 + 85*progress
 
     def _normalize_url(self, url):
         url_parts = url.split('/')
