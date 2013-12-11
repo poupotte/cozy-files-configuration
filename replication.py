@@ -26,6 +26,20 @@ def replicate_from_local(url, device, pwdDevice, idDevice):
     target = "https://%s:%s@%s/cozy" % (device, pwdDevice, url[2])
     server.replicate(source, target, continuous=True, filter="%s/filter" %idDevice)
 
+def replicate_to_local_one_shot(url, device, pwdDevice, idDevice):
+    (username, password) = _get_credentials()
+    target = 'http://%s:%s@localhost:5984/%s' % (username, password, database)
+    url = url.split('/')
+    source = "https://%s:%s@%s/cozy" % (device, pwdDevice, url[2])
+    server.replicate(source, target, filter="%s/filter" %idDevice)
+
+def replicate_from_local_one_shot(url, device, pwdDevice, idDevice):
+    (username, password) = _get_credentials()
+    source = 'http://%s:%s@localhost:5984/%s' % (username, password, database)
+    url = url.split('/')
+    target = "https://%s:%s@%s/cozy" % (device, pwdDevice, url[2])
+    server.replicate(source, target, filter="%s/filter" %idDevice)
+
 def recover_progression():
     url = 'http://localhost:5984/_active_tasks'
     r = requests.get(url)
