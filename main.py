@@ -1,6 +1,7 @@
 from kivy.app import App
 from kivy.uix.anchorlayout import AnchorLayout
 from kivy.uix.progressbar import ProgressBar
+from kivy.uix.textinput import TextInput
 from kivy.properties import *
 from requests import post
 from replication import replicate_to_local, recover_progression, init_database, init_device, replicate_from_local
@@ -16,11 +17,35 @@ except ImportError:
 
 database = 'cozy-files'
 
+class TabTextInput(TextInput):
+
+    def __init__(self, *args, **kwargs):
+        print "init"
+        self.next = kwargs.pop('next', None)
+        super(TabTextInput, self).__init__(*args, **kwargs)
+
+    def set_next(self, next):
+        self.next = next
+
+    def get_next(self):
+        return self.next
+
+    def _keyboard_on_key_down(self, window, keycode, text, modifiers):
+        key, key_str = keycode
+        if key in (9, 13):
+            if self.next is not None:
+                self.next.focus = True
+                self.next.select_all()
+        else:
+            super(TabTextInput, self)._keyboard_on_key_down(window, keycode, text, modifiers)
+
 class Configuration(AnchorLayout):
     progress = ObjectProperty()
-    url = ObjectProperty()
-    pwd = ObjectProperty()
-    name = ObjectProperty()
+    url = TabTextInput()
+    pwd = TabTextInput()
+    name = TabTextInput()
+    url.set_next(pwd)
+    pwd.set_next(name)
     error = ObjectProperty()
 
     max_prog = 0

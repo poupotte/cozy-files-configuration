@@ -1,6 +1,9 @@
 #:kivy 1.0.9
 Configuration: 
 
+<TabTextInput@TextInput>:
+    multiline: False
+
 <Configuration>:
     url: url
     pwd: password
@@ -44,25 +47,24 @@ Configuration:
             text: "L'url de votre cozy"
             color: [0,0,0,0]
             markup: True
-        TextInput: 
+        TabTextInput: 
             id: url
             focus: True
-            multiline: False
+            next: password
         Label: 
             text: 'Le mot de passe de votre cozy'
             color: [0,0,0,0]
             markup: True
-        TextInput:
+        TabTextInput:
             id: password 
             password: True
-            multiline: False
+            next: name
         Label: 
             text: 'Le nom de votre device'
             color: [0,0,0,0]
             markup: True
-        TextInput:
+        TabTextInput:
             id: name 
-            multiline: False
         Label:
             text:''
             id: error
