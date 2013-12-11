@@ -24,7 +24,6 @@ class Configuration(AnchorLayout):
     error = ObjectProperty()
 
     max_prog = 0
-    end = False
 
     def install(self):
         url = self.url.text
@@ -78,7 +77,6 @@ class Configuration(AnchorLayout):
             self.progress.value = 100 * self.max_prog
         else:
             progress = recover_progression()
-            print progress
             if progress > 0.98:
                 return False
             self.progress.value = 15 + 85*progress

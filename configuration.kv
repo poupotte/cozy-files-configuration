@@ -47,6 +47,7 @@ Configuration:
         TextInput: 
             id: url
             focus: True
+            multiline: False
         Label: 
             text: 'Le mot de passe de votre cozy'
             color: [0,0,0,0]
@@ -54,12 +55,14 @@ Configuration:
         TextInput:
             id: password 
             password: True
+            multiline: False
         Label: 
             text: 'Le nom de votre device'
             color: [0,0,0,0]
             markup: True
         TextInput:
             id: name 
+            multiline: False
         Label:
             text:''
             id: error
