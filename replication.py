@@ -49,6 +49,15 @@ def recover_progression():
         progress = progress + rep["progress"]
     return progress/200.
 
+def recover_progression_binary():    
+    db = server[database]
+    files = db.view("file/all")
+    binaries = db.view('binary/all')
+    if len(files) is 0:
+        return 1
+    else:
+        return len(binaries)/float(len(files))
+
 
 def add_view(docType, db):
     db["_design/%s" %docType.lower()] = {

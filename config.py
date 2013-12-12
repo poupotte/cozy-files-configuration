@@ -5,7 +5,6 @@ from kivy.uix.textinput import TextInput
 from kivy.properties import *
 from requests import post
 from replication import replicate_to_local, recover_progression, init_database, init_device, replicate_from_local
-from replication import recover_progression
 from couchdb import Database, Server
 from kivy.clock import Clock
 from threading import Thread
@@ -14,13 +13,14 @@ try:
     import simplejson as json
 except ImportError:
     import json # Python 2.6
+import sys
+import signal
 
 database = 'cozy-files'
 
 class TabTextInput(TextInput):
 
     def __init__(self, *args, **kwargs):
-        print "init"
         self.next = kwargs.pop('next', None)
         super(TabTextInput, self).__init__(*args, **kwargs)
 
@@ -64,12 +64,12 @@ class Configuration(AnchorLayout):
             return      
         try:  
             data = {'login': name}
-            r = post(url + '/device/', data=data, auth=('owner', pwd)) 
-            if r.status_code == 401:
+            req = post(url + '/device/', data=data, auth=('owner', pwd)) 
+            if req.status_code == 401:
                 self._display_error("""L'url et le mot de passe de votre cozy 
                             ne correspondent pas""")
                 return
-            elif r.status_code == 400:
+            elif req.status_code == 400:
                 self._display_error('Ce nom est deja utilise par un autre device')
                 return
         except Exception, e:
@@ -77,17 +77,18 @@ class Configuration(AnchorLayout):
             self._display_error("Verifiez l'url de votre cozy")
             return 
 
-        thread_progress = Thread(target=Clock.schedule_interval, args=(self.progress_bar, 1/25))
-        thread_progress.start()
-        thread_configure = Thread(target=self.configure, args=(url, pwd, name, r))
+
+        Clock.schedule_interval(self.progress_bar, 1/25)
+        thread_configure = Thread(target=self.configure, args=(url, pwd, name, req))
         thread_configure.start()
 
-    def configure(self, url, pwd, name, r):
+
+    def configure(self, url, pwd, name, req):
         self.max_prog = 0.1
         self._display_error("")
         init_database() 
         self.max_prog = 0.15
-        data = json.loads(r.content)
+        data = json.loads(req.content)
         self.max_prog = 0.98
         replicate_to_local(url, name, data['password'], data['id']) 
         err = init_device(url, data['password'], data['id'])
@@ -103,6 +104,7 @@ class Configuration(AnchorLayout):
         else:
             progress = recover_progression()
             if progress > 0.98:
+                sys.exit(0)
                 return False
             self.progress.value = 15 + 85*progress
 
