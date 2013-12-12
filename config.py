@@ -16,21 +16,33 @@ except ImportError:
 import sys
 import signal
 
-database = 'cozy-files'
 
 class TabTextInput(TextInput):
+    '''
+    TabTextInput rewrite TextInput to switch TextInput when user press tab or enter
+    '''
 
     def __init__(self, *args, **kwargs):
         self.next = kwargs.pop('next', None)
         super(TabTextInput, self).__init__(*args, **kwargs)
 
     def set_next(self, next):
+        '''
+        Initialise next textinput
+            next {TextInput}: next textinput on windows
+        '''
         self.next = next
 
     def get_next(self):
+        '''
+        Return the next TextInput
+        '''
         return self.next
 
     def _keyboard_on_key_down(self, window, keycode, text, modifiers):
+        '''
+        Catch keyboard events to force a switch between TextInput if necessary
+        '''
         key, key_str = keycode
         if key in (9, 13):
             if self.next is not None:
@@ -39,7 +51,11 @@ class TabTextInput(TextInput):
         else:
             super(TabTextInput, self)._keyboard_on_key_down(window, keycode, text, modifiers)
 
+
 class Configuration(AnchorLayout):
+    '''
+    Manage configuration window
+    '''
     progress = ObjectProperty()
     url = TabTextInput()
     pwd = TabTextInput()
@@ -51,6 +67,14 @@ class Configuration(AnchorLayout):
     max_prog = 0
 
     def install(self):
+        '''
+        Install cozy-files: 
+            * Add device in user's cozy
+            * Replicate metadata from cozy to local 
+            * Update device
+            * Create replication filter
+            * Replicate metadata from local to cozy
+        '''
         url = self.url.text
         pwd = self.pwd.text
         name = self.name.text
@@ -75,8 +99,7 @@ class Configuration(AnchorLayout):
         except Exception, e:
             print e
             self._display_error("Verifiez l'url de votre cozy")
-            return 
-
+            return
 
         Clock.schedule_interval(self.progress_bar, 1/25)
         thread_configure = Thread(target=self.configure, args=(url, pwd, name, req))
@@ -84,6 +107,13 @@ class Configuration(AnchorLayout):
 
 
     def configure(self, url, pwd, name, req):
+        '''
+        Configure cozy-files
+            url  {string}: cozy url
+            pwd  {string}: cozy password
+            name {string}: device name
+            req  {object}: response of request to add device in cozy
+        '''
         self.max_prog = 0.1
         self._display_error("")
         init_database() 
@@ -99,6 +129,9 @@ class Configuration(AnchorLayout):
         pass
       
     def progress_bar(self, dt):
+        '''
+        Update progress bar
+        '''
         if self.max_prog < 0.16:
             self.progress.value = 100 * self.max_prog
         else:
@@ -109,6 +142,10 @@ class Configuration(AnchorLayout):
             self.progress.value = 15 + 85*progress
 
     def _normalize_url(self, url):
+        '''
+        Normalize url
+            url {string}: cozy url
+        '''
         url_parts = url.split('/')
         for part in url_parts:
             if part.find('cozycloud.cc') is not -1:
@@ -116,6 +153,10 @@ class Configuration(AnchorLayout):
         return False
 
     def _display_error(self, error):
+        '''
+        Display error
+            error {string}: message to display
+        '''
         self.error.text = error
         self.error.texture_update()
         self.error.anchors

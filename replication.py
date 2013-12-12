@@ -8,39 +8,58 @@ except ImportError:
 import requests
 import os
 
-database = "cozy-files"
-server = Server('http://localhost:5984/')
+DATABASE = "cozy-files"
+SERVER = Server('http://localhost:5984/')
 
 
 def replicate_to_local(url, device, pwdDevice, idDevice):
+    '''
+    Replicate metadata from cozy to local
+    '''
     (username, password) = _get_credentials()
-    target = 'http://%s:%s@localhost:5984/%s' % (username, password, database)
+    target = 'http://%s:%s@localhost:5984/%s' % (username, password, DATABASE)
     url = url.split('/')
     source = "https://%s:%s@%s/cozy" % (device, pwdDevice, url[2])
-    server.replicate(source, target, continuous=True, filter="%s/filter" %idDevice)
+    SERVER.replicate(source, target, continuous=True, filter="%s/filter" %idDevice)
+
 
 def replicate_from_local(url, device, pwdDevice, idDevice):
+    '''
+    Replicate metadata from local to cozy
+    '''
     (username, password) = _get_credentials()
-    source = 'http://%s:%s@localhost:5984/%s' % (username, password, database)
+    source = 'http://%s:%s@localhost:5984/%s' % (username, password, DATABASE)
     url = url.split('/')
     target = "https://%s:%s@%s/cozy" % (device, pwdDevice, url[2])
-    server.replicate(source, target, continuous=True, filter="%s/filter" %idDevice)
+    SERVER.replicate(source, target, continuous=True, filter="%s/filter" %idDevice)
+
 
 def replicate_to_local_one_shot(url, device, pwdDevice, idDevice):
+    '''
+    Replicate metadata from cozy to local with a one-shot replication
+    '''
     (username, password) = _get_credentials()
-    target = 'http://%s:%s@localhost:5984/%s' % (username, password, database)
+    target = 'http://%s:%s@localhost:5984/%s' % (username, password, DATABASE)
     url = url.split('/')
     source = "https://%s:%s@%s/cozy" % (device, pwdDevice, url[2])
-    server.replicate(source, target, filter="%s/filter" %idDevice)
+    SERVER.replicate(source, target, filter="%s/filter" %idDevice)
+
 
 def replicate_from_local_one_shot(url, device, pwdDevice, idDevice):
+    '''
+    Replicate metadata from local to cozy with a one-shot replication
+    '''
     (username, password) = _get_credentials()
-    source = 'http://%s:%s@localhost:5984/%s' % (username, password, database)
+    source = 'http://%s:%s@localhost:5984/%s' % (username, password, DATABASE)
     url = url.split('/')
     target = "https://%s:%s@%s/cozy" % (device, pwdDevice, url[2])
-    server.replicate(source, target, filter="%s/filter" %idDevice)
+    SERVER.replicate(source, target, filter="%s/filter" %idDevice)
+
 
 def recover_progression():
+    '''
+    Recover progression of metadata replication
+    '''
     url = 'http://localhost:5984/_active_tasks'
     r = requests.get(url)
     replications = json.loads(r.content)
@@ -49,8 +68,12 @@ def recover_progression():
         progress = progress + rep["progress"]
     return progress/200.
 
-def recover_progression_binary():    
-    db = server[database]
+
+def recover_progression_binary():
+    '''
+    Recover progression of binaries download
+    '''    
+    db = SERVER[DATABASE]
     files = db.view("file/all")
     binaries = db.view('binary/all')
     if len(files) is 0:
@@ -60,6 +83,11 @@ def recover_progression_binary():
 
 
 def add_view(docType, db):
+    '''
+    Add view in database
+        docType {string}: docType of view
+        db {Object}: database
+    '''
     db["_design/%s" %docType.lower()] = {
     "views": {
         "all": {
@@ -87,8 +115,13 @@ def add_view(docType, db):
         }
 
 def init_database():
+    '''
+    Initialize database:
+        * Create database
+        * Initialize folder, file, binary and device views
+    '''
     # Create database
-    db = server.create(database)
+    db = SERVER.create(DATABASE)
 
     add_view('Folder', db)
     add_view('File', db)
@@ -125,7 +158,13 @@ def init_database():
             }
 
 def init_device(url, pwdDevice, idDevice):
-    db = server[database]
+    '''
+    Initialize device
+        url {string}: cozy url
+        pwdDevice {string}: device password
+        idDevice {Number}: device id
+    '''
+    db = SERVER[DATABASE]
     res = db.view("device/all")
     if not res:
         init_device(url, pwdDevice, idDevice)
