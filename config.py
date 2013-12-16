@@ -4,7 +4,8 @@ from kivy.uix.progressbar import ProgressBar
 from kivy.uix.textinput import TextInput
 from kivy.properties import *
 from requests import post
-from replication import replicate_to_local, recover_progression, init_database, init_device, replicate_from_local
+from replication import replicate_to_local, recover_progression, init_database, replicate_from_local_one_shot_without_deleted
+from replication import init_device, replicate_from_local, replicate_to_local_one_shot_without_deleted, replicate_to_local_start_seq, replicate_from_local_start_seq
 from couchdb import Database, Server
 from kivy.clock import Clock
 from threading import Thread
@@ -120,7 +121,8 @@ class Configuration(AnchorLayout):
         self.max_prog = 0.15
         data = json.loads(req.content)
         self.max_prog = 0.98
-        replicate_to_local(url, name, data['password'], data['id']) 
+        repli = replicate_to_local_one_shot_without_deleted(url, name, data['password'], data['id'])
+        replicate_to_local_start_seq(url, name, data['password'], data['id'], repli['source_last_seq'])
         err = init_device(url, data['password'], data['id'])
         if err:
             self._display_error(err)
@@ -135,7 +137,7 @@ class Configuration(AnchorLayout):
         if self.max_prog < 0.16:
             self.progress.value = 100 * self.max_prog
         else:
-            progress = recover_progression()
+            progress = recover_progression((self.progress.value-15)/85.)
             if progress > 0.98:
                 sys.exit(0)
                 return False

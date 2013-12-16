@@ -1,4 +1,4 @@
-from couchdb import Database, Server
+from couchdb import Server
 from couchdb.client import Row, ViewResults
 
 try:
@@ -10,7 +10,6 @@ import os
 
 DATABASE = "cozy-files"
 SERVER = Server('http://localhost:5984/')
-
 
 def replicate_to_local(url, device, pwdDevice, idDevice):
     '''
@@ -32,6 +31,28 @@ def replicate_from_local(url, device, pwdDevice, idDevice):
     url = url.split('/')
     target = "https://%s:%s@%s/cozy" % (device, pwdDevice, url[2])
     SERVER.replicate(source, target, continuous=True, filter="%s/filter" %idDevice)
+
+
+def replicate_to_local_start_seq(url, device, pwdDevice, idDevice, seq):
+    '''
+    Replicate metadata from cozy to local
+    '''
+    (username, password) = _get_credentials()
+    target = 'http://%s:%s@localhost:5984/%s' % (username, password, DATABASE)
+    url = url.split('/')
+    source = "https://%s:%s@%s/cozy" % (device, pwdDevice, url[2])
+    SERVER.replicate(source, target, continuous=True, filter="%s/filter" %idDevice, since_seq=seq)
+
+
+def replicate_from_local_start_seq(url, device, pwdDevice, idDevice, seq):
+    '''
+    Replicate metadata from local to cozy
+    '''
+    (username, password) = _get_credentials()
+    source = 'http://%s:%s@localhost:5984/%s' % (username, password, DATABASE)
+    url = url.split('/')
+    target = "https://%s:%s@%s/cozy" % (device, pwdDevice, url[2])
+    SERVER.replicate(source, target, continuous=True, filter="%s/filter" %idDevice, since_seq=seq)
 
 
 def replicate_to_local_one_shot(url, device, pwdDevice, idDevice):
@@ -56,17 +77,41 @@ def replicate_from_local_one_shot(url, device, pwdDevice, idDevice):
     SERVER.replicate(source, target, filter="%s/filter" %idDevice)
 
 
-def recover_progression():
+def replicate_to_local_one_shot_without_deleted(url, device, pwdDevice, idDevice):
+    '''
+    Replicate metadata from cozy to local with a one-shot replication
+    '''
+    (username, password) = _get_credentials()
+    target = 'http://%s:%s@localhost:5984/%s' % (username, password, DATABASE)
+    url = url.split('/')
+    source = "https://%s:%s@%s/cozy" % (device, pwdDevice, url[2])
+    return SERVER.replicate(source, target, filter="%s/filterDocType" %idDevice)
+
+
+def replicate_from_local_one_shot_without_deleted(url, device, pwdDevice, idDevice):
+    '''
+    Replicate metadata from local to cozy with a one-shot replication
+    '''
+    (username, password) = _get_credentials()
+    source = 'http://%s:%s@localhost:5984/%s' % (username, password, DATABASE)
+    url = url.split('/')
+    target = "https://%s:%s@%s/cozy" % (device, pwdDevice, url[2])
+    return SERVER.replicate(source, target, filter="%s/filterDocType" %idDevice)
+
+
+def recover_progression(prog_min):
     '''
     Recover progression of metadata replication
     '''
     url = 'http://localhost:5984/_active_tasks'
     r = requests.get(url)
     replications = json.loads(r.content)
-    progress = 0
+    prog = 0
     for rep in replications:
-        progress = progress + rep["progress"]
-    return progress/200.
+        prog = prog + rep["progress"]
+    if prog/200. > prog_min:
+        prog = prog/200.
+    return prog
 
 
 def recover_progression_binary():
@@ -184,10 +229,20 @@ def init_device(url, pwdDevice, idDevice):
                         return true; 
                     }
                     if ("""
+            filter2 ="""function(doc, req) {
+                    if ("""
             for docType in device["configuration"]:
                 filter = filter + "(doc.docType && doc.docType === \"%s\") ||" %docType
+                filter2 = filter2 + "(doc.docType && doc.docType === \"%s\") ||" %docType
             filter = filter[0:-3]
+            filter2 = filter2[0:-3]
             filter = filter + """){
+                        return true; 
+                    } else { 
+                        return false; 
+                    }
+                }"""
+            filter2 = filter2 + """){
                         return true; 
                     } else { 
                         return false; 
@@ -197,7 +252,8 @@ def init_device(url, pwdDevice, idDevice):
                 "_id": "_design/%s" % idDevice,
                 "views": {},
                 "filters": {
-                    "filter": filter
+                    "filter": filter,
+                    "filterDocType": filter2
                     }
                 }
             db.save(doc) 

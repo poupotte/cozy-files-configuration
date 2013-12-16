@@ -1,8 +1,7 @@
 #:kivy 1.0.9
-Binary:
+End:
 
-<Binary>:
-    progress: bar
+<End>:
     canvas.before:
         Color:
             rgba: 1, 1, 1, 1
@@ -25,10 +24,9 @@ Binary:
             allow_stretch: True
             keep_ratio: True 
         Label: 
-            text: "Telechargement des fichiers ..."
+            text: "Cozy files est bien configuré"
             color: [0,0,0,0]
             markup: True     
-        ProgressBar:
-            max: 100
-            value: 0
-            id: bar
+        Button:
+            text: 'Ok'    
+            on_press: root.end()
