@@ -99,19 +99,19 @@ def replicate_from_local_one_shot_without_deleted(url, device, pwdDevice, idDevi
     return SERVER.replicate(source, target, filter="%s/filterDocType" %idDevice)
 
 
-def recover_progression(prog_min):
+def recover_progression():
     '''
     Recover progression of metadata replication
     '''
     url = 'http://localhost:5984/_active_tasks'
     r = requests.get(url)
     replications = json.loads(r.content)
-    prog = 0
+    prog = 0   
     for rep in replications:
-        prog = prog + rep["progress"]
-    if prog/200. > prog_min:
-        prog = prog/200.
-    return prog
+        if 'replication_id' in rep:
+            if rep['replication_id'].find('continuous') is not -1:
+                prog = prog + rep["progress"]
+    return prog/200.
 
 
 def recover_progression_binary():

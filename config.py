@@ -120,9 +120,10 @@ class Configuration(AnchorLayout):
         init_database() 
         self.max_prog = 0.15
         data = json.loads(req.content)
+        repli = replicate_to_local_one_shot_without_deleted(url, name, data['password'], data['id'])   
+        self.max_prog = 0.30  
+        replicate_to_local_start_seq(url, name, data['password'], data['id'], repli['source_last_seq'])   
         self.max_prog = 0.98
-        repli = replicate_to_local_one_shot_without_deleted(url, name, data['password'], data['id'])
-        replicate_to_local_start_seq(url, name, data['password'], data['id'], repli['source_last_seq'])
         err = init_device(url, data['password'], data['id'])
         if err:
             self._display_error(err)
@@ -134,14 +135,14 @@ class Configuration(AnchorLayout):
         '''
         Update progress bar
         '''
-        if self.max_prog < 0.16:
+        if self.max_prog < 0.31:
             self.progress.value = 100 * self.max_prog
         else:
-            progress = recover_progression((self.progress.value-15)/85.)
+            progress = recover_progression()
             if progress > 0.98:
                 sys.exit(0)
                 return False
-            self.progress.value = 15 + 85*progress
+            self.progress.value = 30 + 70*progress
 
     def _normalize_url(self, url):
         '''
